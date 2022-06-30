@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/joho/godotenv"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -37,7 +38,13 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	defer res.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			panic(err)
+		}
+	}(res.Body)
+
 	body, err := ioutil.ReadAll(res.Body)
 
 	if err != nil {
@@ -60,7 +67,10 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 
 	respArticles := Response{articles}
 	b, err := json.Marshal(respArticles)
-	fmt.Fprintf(w, string(b))
+	_, err = fmt.Fprintf(w, string(b))
+	if err != nil {
+		return
+	}
 }
 
 func handleRequests() {
